@@ -141,10 +141,6 @@ export default class ParserUtils {
                     if (player.objectives?.flag_capture_bonus)
                         points += 5 * player.objectives.flag_capture_bonus.value;
 
-                    // :-*
-                    if (player.id === "5622")
-                        points /= 2;
-
                     if (mvpPoints[player.id] != null)
                         mvpPoints[player.id] += points;
                 }
@@ -1048,6 +1044,7 @@ export default class ParserUtils {
             flagEvents['flag_capture'], flagEvents['flag_return'], flagEvents['flag_pickup']);
         flagSequence.sort((a, b) => a.lineNumber > b.lineNumber ? 1 : -1);
 
+        const thisPlayerTeam = ParserUtils.getTeamForPlayer(thisPlayer, teams);
         // accumulator is [boolean, Event], where
         // * boolean is flag state: null = relay, false = dropped, true = carried
         // * Event is the event from the flag pickup; unset if not carried by this player
@@ -1059,14 +1056,21 @@ export default class ParserUtils {
 
             const eventType = thisEvent.eventType;
 
-            // if the flag returned, set state to null
             if (eventType === EventType.FlagReturn) {
-                bonusActive = false;
-                return [null, undefined];
+                // TODO: if there are more than two color teams, any flag return will be treated identically;
+                // more state would need to be tracked about the state of each individual flag to handle it.
+                if (!thisEvent.data || (thisEvent.data.team != thisPlayerTeam)) {
+                    // if the flag returned, set state to null
+                    bonusActive = false;
+                    return [null, undefined];
+                }
+                else {
+                    // this player's team flag returned (not the one they're trying to capture); ignore it
+                    return flagStatus;
+                }
             }
 
-            if ((eventType === EventType.PlayerCapturedFlag || eventType === EventType.PlayerPickedUpFlag)
-                && !this.playersOnSameTeam(teams, thisPlayer, thisEvent.playerFrom!)) {
+            if (!this.playersOnSameTeam(teams, thisPlayer, thisEvent.playerFrom!)) {
                 // this is a flag event associated with the other team; ignore it
                 return flagStatus;
             }
