@@ -480,6 +480,11 @@ export class Event {
                                     case "Flag": // cornfield; e.g. "Flag 1", "Flag 2"
                                         eventType = EventType.PlayerPickedUpFlag;
                                         break;
+                                    case "Flag1": // asti_r flags
+                                    case "Flag2":
+                                    case "Flag3":
+                                        eventType = EventType.PlayerPickedUpFlag;
+                                        break;
                                     case "Capture":
                                         if (parts[2] = "Point")
                                             eventType = EventType.PlayerCapturedFlag;
